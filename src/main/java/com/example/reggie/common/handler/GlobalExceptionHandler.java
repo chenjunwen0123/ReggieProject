@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
         if(e instanceof CustomException){
             return Res.error(e.getMessage());
         }
-        return Res.error("Unknown exception") ;
+        return Res.error("Unknown exception:" + e.getMessage()) ;
     }
 
 }

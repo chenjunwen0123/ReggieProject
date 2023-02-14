@@ -79,4 +79,20 @@ public class SetmealController {
         }
         return Res.success("Success: status batch updated");
     }
+    @Autowired
+    private SetmealDishService setmealDishService;
+    @GetMapping("/{id}")
+    public Res<SetmealDto> getSetmealDtoById(@PathVariable Long id){
+        Setmeal setmeal = setmealService.getById(id);
+        SetmealDto setmealDto = new SetmealDto();
+        BeanUtils.copyProperties(setmeal,setmealDto);
+        String categoryName = categoryService.getCategoryNameById(setmeal.getCategoryId());
+        LambdaQueryWrapper<SetmealDish> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SetmealDish::getSetmealId,id);
+        List<SetmealDish> setmealDishes = setmealDishService.list(wrapper);
+        setmealDto.setCategoryName(categoryName);
+        setmealDto.setSetmealDishes(setmealDishes);
+        return Res.success(setmealDto);
+    }
+
 }

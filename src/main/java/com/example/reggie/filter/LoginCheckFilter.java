@@ -23,6 +23,9 @@ public class LoginCheckFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
         // 本次请求的路径
+        String contextPath = request.getContextPath();
+        String servletPath = request.getServletPath();
+        log.info("contextPath:{}, servletPath:{}", contextPath,servletPath);
         String requestURI = request.getRequestURI();
         //log.info("Intercept URI:{}",requestURI);
 
@@ -32,17 +35,13 @@ public class LoginCheckFilter implements Filter {
                 "/employee/logout",
                 "/backend/**",
                 "/front/**",
-                "/common/**"
+                "/common/**",
+                "/user/sendMsg",
+                "/user/login"
         };
 
-        // 判断当前请求路径是否不需要拦截
-        boolean check = false;
-        for(String url : urls){
-            check = ANT_PATH_MATCHER.match(url,requestURI);
-            if(check){
-                break;
-            }
-        }
+        // 判断当前请求路径是否在不需要拦截的路径列表中
+        boolean check = checkWhiteList(requestURI,urls);
 
         // 若不需要拦截，直接放行
         if(check){
@@ -50,16 +49,42 @@ public class LoginCheckFilter implements Filter {
             log.info("Discharge URI:{}",requestURI);
             return;
         }
-        // 若需要拦截，但是已登陆状态，放行
+
         Long sessionId = (Long)request.getSession().getAttribute("employee");
-        if(sessionId != null){
-            BaseContext.setCurrentId(sessionId);
-            filterChain.doFilter(request,response);
-            log.info("Discharge URI in Login:{}",requestURI);
+        log.info("SessionId:{}",sessionId);
+        Long userSessionId = (Long)request.getSession().getAttribute("userSession");
+        log.info("userSessionId:{}",userSessionId);
+
+        if(userSessionId == null && sessionId == null) {
+            responseNotLogin(requestURI, response);
             return;
         }
-
-        // 写回信息
+        // 若需要拦截
+        // 后台是否处于已登陆状态，若是，则放行
+        // front，用户是否已登陆
+        if(sessionId != null){
+            BaseContext.setCurrentId(sessionId);
+            filterChain.doFilter(request, response);
+            log.info("[Backend]Discharge URI in login:{}", requestURI);
+            return;
+        }
+        if(userSessionId != null){
+            BaseContext.setCurrentId(userSessionId);
+            filterChain.doFilter(request, response);
+            log.info("[front]Discharge URI in Login:{}", requestURI);
+        }
+    }
+    private boolean checkWhiteList(String requestURI, String[] urls){
+        boolean check = false;
+        for(String url : urls){
+            check = ANT_PATH_MATCHER.match(url,requestURI);
+            if(check){
+                break;
+            }
+        }
+        return check;
+    }
+    private void responseNotLogin(String requestURI,HttpServletResponse response) throws IOException {
         response.getWriter().write(JSON.toJSONString(Res.error("NOTLOGIN")));
         log.info("Intercept URI with Error(NOTLOGIN):{}",requestURI);
     }
