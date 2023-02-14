@@ -8,9 +8,8 @@ import com.example.reggie.common.Res;
 import com.example.reggie.dto.DishDto;
 
 import com.example.reggie.pojo.Dish;
-import com.example.reggie.pojo.DishFlavor;
 import com.example.reggie.service.CategoryService;
-import com.example.reggie.service.DishFlavorService;
+
 import com.example.reggie.service.DishService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -72,5 +71,13 @@ public class DishController {
         log.info(dishDto.toString());
         dishService.updateDishDtoById(dishDto);
         return Res.success("Success: dish info updated");
+    }
+    @GetMapping("/list")
+    public Res<List<Dish>> getDishListByCategoryId(Dish dish){
+        LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Dish::getCategoryId, dish.getCategoryId());
+
+        List<Dish> dishList = dishService.list(queryWrapper);
+        return Res.success(dishList);
     }
 }
