@@ -30,7 +30,6 @@ public class CommonController {
         }
         String suffix = originalName.substring(originalName.lastIndexOf('.'));
         String fileName = UUID.randomUUID().toString() + suffix;
-        log.info("upload: \n originalName={},\n newFilePath={} \n",originalName,basePath + fileName);
         file.transferTo(new File(basePath, fileName));
 
         return Res.success(fileName);
@@ -38,7 +37,6 @@ public class CommonController {
 
     @GetMapping("/download")
     public void downloadFile(String name, HttpServletResponse response) throws IOException {
-        log.info("filename:{}",name);
         String classPath = ResourceUtils.getURL(ResourceUtils.CLASSPATH_URL_PREFIX).getPath();
         String basePath = classPath + "backend/page/common/resources/";
         name = basePath + name;

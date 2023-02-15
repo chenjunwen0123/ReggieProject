@@ -2,6 +2,7 @@ package com.example.reggie.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.example.reggie.common.BaseContext;
 import com.example.reggie.common.Res;
 import com.example.reggie.pojo.User;
 import com.example.reggie.service.UserService;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.Map;
@@ -66,5 +68,11 @@ public class UserController {
             return Res.success(user);
         }
         return Res.error("Error: Login failed");
+    }
+
+    @PostMapping("/loginout")
+    public Res<String> logout(HttpServletRequest request){
+        request.getSession().removeAttribute("userSession");
+        return Res.success("Success: Employee Logout");
     }
 }

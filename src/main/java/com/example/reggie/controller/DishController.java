@@ -8,8 +8,10 @@ import com.example.reggie.common.Res;
 import com.example.reggie.dto.DishDto;
 
 import com.example.reggie.pojo.Dish;
+import com.example.reggie.pojo.DishFlavor;
 import com.example.reggie.service.CategoryService;
 
+import com.example.reggie.service.DishFlavorService;
 import com.example.reggie.service.DishService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -72,12 +74,34 @@ public class DishController {
         dishService.updateDishDtoById(dishDto);
         return Res.success("Success: dish info updated");
     }
+//    @GetMapping("/list")
+//    public Res<List<Dish>> getDishListByCategoryId(Dish dish){
+//        LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
+//        queryWrapper.eq(Dish::getCategoryId, dish.getCategoryId());
+//        queryWrapper.orderByAsc(Dish::getSort).orderByDesc(Dish::getUpdateTime);
+//        List<Dish> dishList = dishService.list(queryWrapper);
+//        return Res.success(dishList);
+//    }
+
+    @Autowired
+    private DishFlavorService dishFlavorService;
     @GetMapping("/list")
-    public Res<List<Dish>> getDishListByCategoryId(Dish dish){
+    public Res<List<DishDto>> getDishListByCategoryId(Dish dish){
         LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Dish::getCategoryId, dish.getCategoryId());
-
+        queryWrapper.orderByAsc(Dish::getSort).orderByDesc(Dish::getUpdateTime);
         List<Dish> dishList = dishService.list(queryWrapper);
-        return Res.success(dishList);
+
+        List<DishDto> dishDtos = dishList.stream().map((item)->{
+            DishDto dishDto = new DishDto();
+            BeanUtils.copyProperties(item,dishDto);
+            String categoryName = categoryService.getCategoryNameById(item.getCategoryId());
+            List<DishFlavor> flavors = dishFlavorService.list(new LambdaQueryWrapper<DishFlavor>().eq(DishFlavor::getDishId,item.getId()));
+            dishDto.setFlavors(flavors);
+            dishDto.setCategoryName(categoryName);
+            return dishDto;
+        }).collect(Collectors.toList());
+        return Res.success(dishDtos);
     }
+
 }

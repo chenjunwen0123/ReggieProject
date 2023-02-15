@@ -51,7 +51,7 @@ public class LoginCheckFilter implements Filter {
         }
 
         Long sessionId = (Long)request.getSession().getAttribute("employee");
-        log.info("SessionId:{}",sessionId);
+        log.info("employeeSessionId:{}",sessionId);
         Long userSessionId = (Long)request.getSession().getAttribute("userSession");
         log.info("userSessionId:{}",userSessionId);
 
@@ -69,7 +69,7 @@ public class LoginCheckFilter implements Filter {
             return;
         }
         if(userSessionId != null){
-            BaseContext.setCurrentId(userSessionId);
+            //BaseContext.setCurrentId(userSessionId);
             filterChain.doFilter(request, response);
             log.info("[front]Discharge URI in Login:{}", requestURI);
         }

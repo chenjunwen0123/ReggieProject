@@ -473,16 +473,19 @@
             async cartNumberSubtract(item){
               let params = {
                   dishId:item.dishId,
-                  setmealId:item.setmealId,
+                  setmealId:item.setmealId
                 }
                 const res = await updateCartApi(params)
                 if(res.code === 1){
-                this.dishList.forEach(dish=>{
-                  if(dish.id === (item.dishId || item.setmealId)){
-                    dish.number = (res.data.number === 0 ? undefined : res.data.number)
+                  this.dishList.forEach(dish=>{
+                    if(dish.id === (item.dishId || item.setmealId)){
+                      dish.number = (res.data.number === 0 ? undefined : res.data.number)
+                    }
+                  })
+                  await this.getCartData()
+                  if(this.cartData.length === 0){
+                    this.cartDialogShow = false
                   }
-                })
-                this.getCartData()
                 }else{
                   this.$notify({ type:'warning', message:res.msg});
                 }
