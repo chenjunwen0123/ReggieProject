@@ -1,7 +1,6 @@
 package com.example.reggie.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.example.reggie.common.Res;
@@ -16,9 +15,12 @@ import com.example.reggie.service.DishService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,17 +31,27 @@ public class DishController {
     private DishService dishService;
     @Autowired
     private CategoryService categoryService;
+    @Autowired
+    private RedisTemplate<Object,Object> redisTemplate;
     @PostMapping
-    public Res<String> addDish(@RequestBody DishDto dishDto){
+    public Res<String> save(@RequestBody DishDto dishDto){
         if(dishDto==null){
             return Res.error("Error：received non-info");
         }
+
+        // 策略1 ：全清理
+        String keys = "dish_*";
+        Set<Object> targetKeys = redisTemplate.keys(keys);
+        if(targetKeys != null)
+            redisTemplate.delete(targetKeys);
+
+        // 策略2： 指定清理
         dishService.saveDish(dishDto);
         return Res.success("Success: dish saved");
     }
 
     @GetMapping("/page")
-    public Res<Page> getDishPage(Integer page, Integer pageSize, String name){
+    public Res<Page<DishDto>> getDishPage(Integer page, Integer pageSize, String name){
         Page<Dish> pageInfo = new Page<>(page,pageSize);
         Page<DishDto> dishDtoPage = new PageDTO<>();
 
@@ -87,12 +99,19 @@ public class DishController {
     private DishFlavorService dishFlavorService;
     @GetMapping("/list")
     public Res<List<DishDto>> getDishListByCategoryId(Dish dish){
+        String key = "dish_" + dish.getCategoryId() + "_" + dish.getStatus();
+        List<DishDto> dishDtos = (List<DishDto>) redisTemplate.opsForValue().get(key);
+
+        if(dishDtos != null){
+            return Res.success(dishDtos);
+        }
+
         LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Dish::getCategoryId, dish.getCategoryId());
         queryWrapper.orderByAsc(Dish::getSort).orderByDesc(Dish::getUpdateTime);
         List<Dish> dishList = dishService.list(queryWrapper);
 
-        List<DishDto> dishDtos = dishList.stream().map((item)->{
+        dishDtos = dishList.stream().map((item)->{
             DishDto dishDto = new DishDto();
             BeanUtils.copyProperties(item,dishDto);
             String categoryName = categoryService.getCategoryNameById(item.getCategoryId());
@@ -101,6 +120,8 @@ public class DishController {
             dishDto.setCategoryName(categoryName);
             return dishDto;
         }).collect(Collectors.toList());
+
+        redisTemplate.opsForValue().set(key, dishDtos, 120, TimeUnit.MINUTES);
         return Res.success(dishDtos);
     }
 

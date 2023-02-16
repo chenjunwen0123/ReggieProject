@@ -2,24 +2,22 @@ package com.example.reggie.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
-import com.example.reggie.common.BaseContext;
 import com.example.reggie.common.Res;
 import com.example.reggie.pojo.User;
 import com.example.reggie.service.UserService;
-import com.example.reggie.utils.SMSUtils;
 import com.example.reggie.utils.ValidateCodeUtils;
-import kotlin.jvm.internal.Lambda;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/user")
@@ -27,6 +25,8 @@ import java.util.Map;
 public class UserController {
     @Autowired
     private UserService userService;
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
 
     @PostMapping("/sendMsg")
     public Res<String> sendMsg(@RequestBody User user,HttpSession httpSession){
@@ -36,9 +36,10 @@ public class UserController {
             String code = ValidateCodeUtils.generateValidateCode(4).toString();
             log.info("code={}",code);
 
-            //SMSUtils.sendMessage();
-            httpSession.setAttribute("phone",phone);
-            httpSession.setAttribute("code",code);
+            // SMSUtils.sendMessage();
+            // httpSession.setAttribute(phone,code);
+            // 将验证码以手机号为键缓存下来
+            redisTemplate.opsForValue().set(phone,code,30, TimeUnit.SECONDS);
             return Res.success("Success: ValidateCode Sent");
         }
         return Res.error("Failed: ValidateCode sent failed");
@@ -48,12 +49,12 @@ public class UserController {
     public Res<User> login(@RequestBody Map<String,Object> userMap, HttpSession session){
         String phone = userMap.get("phone").toString();
         String code = userMap.get("code").toString();
-        Object phoneInSession = session.getAttribute("phone");
-        Object codeInSession = session.getAttribute("code");
+        //Object codeInSession = session.getAttribute(phone);
 
+        // 从redis中获取验证码
+        String codeInCache = redisTemplate.opsForValue().get(phone);
         // 同时校验手机和验证码是否对应
-        if( (phoneInSession!=null && phoneInSession.equals(phone))
-                && (codeInSession != null && codeInSession.equals(code)) ){
+        if( codeInCache != null && codeInCache.equals(code)){
 
             LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(User::getPhone, phone);
@@ -65,6 +66,9 @@ public class UserController {
                 userService.save(user);
             }
             session.setAttribute("userSession",user.getId());
+
+            // 删除缓存中的验证码
+            redisTemplate.delete(phone);
             return Res.success(user);
         }
         return Res.error("Error: Login failed");

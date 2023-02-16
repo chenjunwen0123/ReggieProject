@@ -9,7 +9,17 @@ spring:
       url: jdbc:mysql://localhost:3306/reggie?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
       username: root
       password: root
-
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    password: root
+    jedis:
+      pool:                # 连接池配置
+        max-active: 8      # 最大同时连接数
+        max-wait: 1ms      # 最长阻塞等待时间
+        max-idle: 4        # 最大空闲连接数
+        min-idle: 0        # 最小空闲连接数
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

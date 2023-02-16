@@ -23,11 +23,7 @@ public class LoginCheckFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
         // 本次请求的路径
-        String contextPath = request.getContextPath();
-        String servletPath = request.getServletPath();
-        log.info("contextPath:{}, servletPath:{}", contextPath,servletPath);
         String requestURI = request.getRequestURI();
-        //log.info("Intercept URI:{}",requestURI);
 
         // 不需要拦截的请求路径
         String[] urls = new String[]{
@@ -59,9 +55,7 @@ public class LoginCheckFilter implements Filter {
             responseNotLogin(requestURI, response);
             return;
         }
-        // 若需要拦截
-        // 后台是否处于已登陆状态，若是，则放行
-        // front，用户是否已登陆
+
         if(sessionId != null){
             BaseContext.setCurrentId(sessionId);
             filterChain.doFilter(request, response);
@@ -74,6 +68,7 @@ public class LoginCheckFilter implements Filter {
             log.info("[front]Discharge URI in Login:{}", requestURI);
         }
     }
+
     private boolean checkWhiteList(String requestURI, String[] urls){
         boolean check = false;
         for(String url : urls){
