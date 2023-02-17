@@ -39,13 +39,6 @@ public class DishController {
             return Res.error("Error：received non-info");
         }
 
-        // 策略1 ：全清理
-        String keys = "dish_*";
-        Set<Object> targetKeys = redisTemplate.keys(keys);
-        if(targetKeys != null)
-            redisTemplate.delete(targetKeys);
-
-        // 策略2： 指定清理
         dishService.saveDish(dishDto);
         return Res.success("Success: dish saved");
     }
@@ -83,6 +76,19 @@ public class DishController {
     @PutMapping
     public Res<String> updateDishWithFlavor(@RequestBody DishDto dishDto){
         log.info(dishDto.toString());
+
+        // 策略1 ：全清理
+        String keys = "dish_*";
+        Set<Object> targetKeys = redisTemplate.keys(keys);
+        if(targetKeys != null)
+            redisTemplate.delete(targetKeys);
+
+        // 策略2： 指定清理
+//        String keys2 = "dish_" + dishDto.getCategoryId() + "_1";
+//        Set<Object> targetKeys2 = redisTemplate.keys(keys2);
+//        if(targetKeys != null)
+//            redisTemplate.delete(targetKeys2);
+
         dishService.updateDishDtoById(dishDto);
         return Res.success("Success: dish info updated");
     }

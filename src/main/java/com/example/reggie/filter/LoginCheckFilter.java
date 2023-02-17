@@ -47,9 +47,9 @@ public class LoginCheckFilter implements Filter {
         }
 
         Long sessionId = (Long)request.getSession().getAttribute("employee");
-        log.info("employeeSessionId:{}",sessionId);
+        //log.info("employeeSessionId:{}",sessionId);
         Long userSessionId = (Long)request.getSession().getAttribute("userSession");
-        log.info("userSessionId:{}",userSessionId);
+        //log.info("userSessionId:{}",userSessionId);
 
         if(userSessionId == null && sessionId == null) {
             responseNotLogin(requestURI, response);

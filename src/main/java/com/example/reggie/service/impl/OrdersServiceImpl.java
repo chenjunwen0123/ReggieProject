@@ -35,6 +35,11 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
     private AddressBookService addressBookService;
     @Autowired
     private OrderDetailService orderDetailService;
+    @Autowired
+    private DishService dishService;
+    @Autowired
+    private SetmealService setmealService;
+
     @Transactional
     @Override
     public Orders submit(Orders order,HttpSession session) {
@@ -57,8 +62,24 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             detail.setOrderId(orderId);
             detail.setNumber(item.getNumber());
             detail.setName(item.getName());
-            detail.setDishId(item.getDishId());
-            detail.setSetmealId(item.getSetmealId());
+
+            // 检查当前菜品或者套餐是否仍然在售
+            Long dishId = item.getDishId();
+            Long setmealId = item.getSetmealId();
+
+            if(dishId != null){
+                if(dishService.getById(dishId).getStatus() == 0){
+                    throw new CustomException("当前菜品已售罄或停售");
+                }
+            }
+            if(setmealId != null){
+                if(setmealService.getById(setmealId).getStatus() == 0){
+                    throw new CustomException("当前套餐已售罄或停售");
+                }
+            }
+            detail.setDishId(dishId);
+            detail.setSetmealId(setmealId);
+
             detail.setDishFlavor(item.getDishFlavor());
             detail.setAmount(item.getAmount());
             // 当前菜品的总价钱

@@ -15,6 +15,9 @@ import kotlin.jvm.internal.Lambda;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,6 +33,10 @@ public class SetmealController {
     @Autowired
     private CategoryService categoryService;
 
+    @Autowired
+    private RedisCacheManager cacheManager;
+
+    @CacheEvict(value="setmealCache", allEntries = true)
     @PostMapping
     public Res<String> save(@RequestBody SetmealDto setmealDto){
         setmealService.saveWithDish(setmealDto);
@@ -61,13 +68,13 @@ public class SetmealController {
         return Res.success(dtoPage);
     }
 
-
     @DeleteMapping
     public Res<String> deleteSetmeal(@RequestParam List<Long> ids){
         setmealService.removeWithDish(ids);
         return Res.success("Success: deleted");
     }
 
+    @CacheEvict(value="setmealCache", allEntries = true)
     @PostMapping("/status/{status}")
     public Res<String> batchUpdateStatus(@PathVariable Integer status, @RequestParam List<Long> ids){
         for(Long id:ids){
@@ -82,6 +89,7 @@ public class SetmealController {
     }
     @Autowired
     private SetmealDishService setmealDishService;
+
     @GetMapping("/{id}")
     public Res<SetmealDto> getSetmealDtoById(@PathVariable Long id){
         Setmeal setmeal = setmealService.getById(id);
@@ -95,6 +103,8 @@ public class SetmealController {
         setmealDto.setSetmealDishes(setmealDishes);
         return Res.success(setmealDto);
     }
+
+    @Cacheable(value = "setmealCache", key="#setmeal.categoryId + '_' + #setmeal.status")
     @GetMapping("/list")
     public Res<List<Setmeal>> list(Setmeal setmeal){
         LambdaQueryWrapper<Setmeal> wrapper = new LambdaQueryWrapper<>();
