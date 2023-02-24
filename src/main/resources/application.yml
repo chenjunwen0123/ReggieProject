@@ -10,13 +10,13 @@ spring:
         driver-class-name: com.mysql.cj.jdbc.Driver
         url: jdbc:mysql://43.139.228.26:3306/reggie?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
         username: root
-        password: root
+        password: cjw20010123
       slave:
         type: com.alibaba.druid.pool.DruidDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
         url: jdbc:mysql://175.178.116.238:3306/reggie?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
         username: root
-        password: root
+        password: cjw20010123
     masterslave:
       load-balance-algorithm-type: round_robin
       name: dataSource
@@ -48,4 +48,5 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: assign_id
+
 
